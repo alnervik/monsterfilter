@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monsterfilter — Tibia creature-sökning</title>
+  <meta name="description" content="Filtrera Tibias monster på element, hitpoints, exp och beteenden." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <h1><span class="rune">✦</span> Monsterfilter</h1>
+      <p class="subtitle">Sök bland Tibias monster på element, hp, exp och beteenden</p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="filters" aria-label="Filter">
+      <div class="filter-block">
+        <label for="search">Namn</label>
+        <input type="search" id="search" placeholder="t.ex. dragon..." autocomplete="off" />
+      </div>
+
+      <div class="filter-block">
+        <label>Hitpoints</label>
+        <div class="range-row">
+          <input type="number" id="hp-min" placeholder="min" min="0" />
+          <span>–</span>
+          <input type="number" id="hp-max" placeholder="max" min="0" />
+        </div>
+      </div>
+
+      <div class="filter-block">
+        <label>Experience</label>
+        <div class="range-row">
+          <input type="number" id="exp-min" placeholder="min" min="0" />
+          <span>–</span>
+          <input type="number" id="exp-max" placeholder="max" min="0" />
+        </div>
+      </div>
+
+      <div class="filter-block element-groups" id="element-groups">
+        <!-- Fylls av app.js: strong / weakness / immune / healed -->
+      </div>
+
+      <div class="filter-block">
+        <label>Beteenden</label>
+        <div class="tristate-group" id="behaviour-group">
+          <!-- Fylls av app.js -->
+        </div>
+      </div>
+
+      <button id="reset-filters" class="reset-btn" type="button">Rensa filter</button>
+    </aside>
+
+    <section class="results" aria-label="Resultat">
+      <div class="results-meta">
+        <span id="result-count">Laddar...</span>
+        <span id="updated-at" class="updated-at"></span>
+      </div>
+      <div id="grid" class="grid"></div>
+      <p id="empty-state" class="empty-state" hidden>Inga monster matchar dina filter.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
