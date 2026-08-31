@@ -27,11 +27,27 @@
     physical: "var(--el-physical)",
     drown: "var(--el-drown)",
     lifedrain: "var(--el-lifedrain)",
+    agony: "var(--el-lifedrain)",
   };
+
+  const NEUTRAL_COLOR = "var(--text-muted)";
+  const DAMAGE_CATEGORY_KEYS = ["strong", "weakness", "immune"]; // healed är en egen axel, inte del av neutral-beräkningen
 
   function colorForElement(el) {
     const key = (el || "").toLowerCase();
     return ELEMENT_COLOR_MAP[key] || "var(--el-default)";
+  }
+
+  function damageElementsOf(creature) {
+    const set = new Set();
+    for (const key of DAMAGE_CATEGORY_KEYS) {
+      for (const el of creature[key] || []) set.add(el);
+    }
+    return set;
+  }
+
+  function isNeutralTo(creature, element) {
+    return !damageElementsOf(creature).has(element);
   }
 
   // state: selected elements per category (Set of strings), behaviour state per field ("any"|"yes"|"no")
@@ -41,7 +57,11 @@
     hpMax: null,
     expMin: null,
     expMax: null,
-    elements: { strong: new Set(), weakness: new Set(), immune: new Set(), healed: new Set() },
+    speedMin: null,
+    speedMax: null,
+    armorMin: null,
+    armorMax: null,
+    elements: { strong: new Set(), weakness: new Set(), immune: new Set(), healed: new Set(), neutral: new Set() },
     behaviour: { be_paralysed: "any", be_convinced: "any", be_summoned: "any", see_invisible: "any" },
   };
 
@@ -53,6 +73,42 @@
       for (const el of c[category] || []) set.add(el);
     }
     return Array.from(set).sort();
+  }
+
+  function uniqueDamageElements(creatures) {
+    const set = new Set();
+    for (const c of creatures) {
+      for (const el of damageElementsOf(c)) set.add(el);
+    }
+    return Array.from(set).sort();
+  }
+
+  function buildChipRow(elements, colorFn, onToggle) {
+    const row = document.createElement("div");
+    row.className = "chip-row";
+
+    for (const el of elements) {
+      const chip = document.createElement("label");
+      chip.className = "chip";
+      chip.style.setProperty("--chip-color", colorFn(el));
+
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = el;
+      input.addEventListener("change", () => {
+        onToggle(el, input.checked);
+        applyFilters();
+      });
+
+      const span = document.createElement("span");
+      span.textContent = el;
+
+      chip.appendChild(input);
+      chip.appendChild(span);
+      row.appendChild(chip);
+    }
+
+    return row;
   }
 
   function buildElementFilters(creatures) {
@@ -71,32 +127,35 @@
       title.textContent = cat.label;
       group.appendChild(title);
 
-      const row = document.createElement("div");
-      row.className = "chip-row";
-
-      for (const el of elements) {
-        const chip = document.createElement("label");
-        chip.className = "chip";
-        chip.style.setProperty("--chip-color", colorForElement(el));
-
-        const input = document.createElement("input");
-        input.type = "checkbox";
-        input.value = el;
-        input.addEventListener("change", () => {
-          if (input.checked) state.elements[cat.key].add(el);
+      group.appendChild(
+        buildChipRow(elements, colorForElement, (el, checked) => {
+          if (checked) state.elements[cat.key].add(el);
           else state.elements[cat.key].delete(el);
-          applyFilters();
-        });
+        })
+      );
 
-        const span = document.createElement("span");
-        span.textContent = el;
+      container.appendChild(group);
+    }
 
-        chip.appendChild(input);
-        chip.appendChild(span);
-        row.appendChild(chip);
-      }
+    // Neutral är inget eget fält i datan — det är "inte strong/weakness/immune"
+    // för ett givet element, så listan av valbara element beräknas här.
+    const neutralElements = uniqueDamageElements(creatures);
+    if (neutralElements.length > 0) {
+      const group = document.createElement("div");
+      group.className = "element-group";
 
-      group.appendChild(row);
+      const title = document.createElement("div");
+      title.className = "element-group-title";
+      title.textContent = "Neutral mot";
+      group.appendChild(title);
+
+      group.appendChild(
+        buildChipRow(neutralElements, () => NEUTRAL_COLOR, (el, checked) => {
+          if (checked) state.elements.neutral.add(el);
+          else state.elements.neutral.delete(el);
+        })
+      );
+
       container.appendChild(group);
     }
   }
@@ -155,6 +214,19 @@
       }
       if (!matchesAny) return false;
     }
+
+    const selectedNeutral = state.elements.neutral;
+    if (selectedNeutral.size > 0) {
+      let matchesAny = false;
+      for (const sel of selectedNeutral) {
+        if (isNeutralTo(creature, sel)) {
+          matchesAny = true;
+          break;
+        }
+      }
+      if (!matchesAny) return false;
+    }
+
     return true;
   }
 
@@ -169,14 +241,19 @@
     return true;
   }
 
-  function matchesRanges(creature) {
-    const hp = creature.hitpoints;
-    const exp = creature.experience_points;
-    if (state.hpMin != null && (hp == null || hp < state.hpMin)) return false;
-    if (state.hpMax != null && (hp == null || hp > state.hpMax)) return false;
-    if (state.expMin != null && (exp == null || exp < state.expMin)) return false;
-    if (state.expMax != null && (exp == null || exp > state.expMax)) return false;
+  function inRange(value, min, max) {
+    if (min != null && (value == null || value < min)) return false;
+    if (max != null && (value == null || value > max)) return false;
     return true;
+  }
+
+  function matchesRanges(creature) {
+    return (
+      inRange(creature.hitpoints, state.hpMin, state.hpMax) &&
+      inRange(creature.experience_points, state.expMin, state.expMax) &&
+      inRange(creature.speed, state.speedMin, state.speedMax) &&
+      inRange(creature.armor, state.armorMin, state.armorMax)
+    );
   }
 
   function matchesSearch(creature) {
@@ -207,7 +284,9 @@
     stats.className = "card-stats";
     stats.innerHTML =
       `<span>HP <b>${c.hitpoints ?? "?"}</b></span>` +
-      `<span>EXP <b>${c.experience_points ?? "?"}</b></span>`;
+      `<span>EXP <b>${c.experience_points ?? "?"}</b></span>` +
+      `<span>SPD <b>${c.speed ?? "?"}</b></span>` +
+      `<span>ARM <b>${c.armor ?? "?"}</b></span>`;
     card.appendChild(stats);
 
     const badges = document.createElement("div");
@@ -275,11 +354,17 @@
     numField("hp-max", "hpMax");
     numField("exp-min", "expMin");
     numField("exp-max", "expMax");
+    numField("speed-min", "speedMin");
+    numField("speed-max", "speedMax");
+    numField("armor-min", "armorMin");
+    numField("armor-max", "armorMax");
 
     document.getElementById("reset-filters").addEventListener("click", () => {
       state.search = "";
       state.hpMin = state.hpMax = state.expMin = state.expMax = null;
+      state.speedMin = state.speedMax = state.armorMin = state.armorMax = null;
       for (const cat of ELEMENT_CATEGORIES) state.elements[cat.key].clear();
+      state.elements.neutral.clear();
       for (const field of BEHAVIOUR_FIELDS) state.behaviour[field.key] = "any";
 
       document.getElementById("search").value = "";
@@ -287,6 +372,10 @@
       document.getElementById("hp-max").value = "";
       document.getElementById("exp-min").value = "";
       document.getElementById("exp-max").value = "";
+      document.getElementById("speed-min").value = "";
+      document.getElementById("speed-max").value = "";
+      document.getElementById("armor-min").value = "";
+      document.getElementById("armor-max").value = "";
       document.querySelectorAll(".chip input").forEach((el) => (el.checked = false));
       document.querySelectorAll(".tristate-row .seg").forEach((seg) => {
         for (const btn of seg.children) btn.classList.remove("active");
