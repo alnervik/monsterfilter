@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-19T08:56:11.614926+00:00",
+  "updated_at": "2026-10-26T08:58:43.170345+00:00",
   "count": 718,
   "failed_races": [],
   "creatures": [
@@ -4380,7 +4380,7 @@
       "race": "norcferatudworc",
       "image_url": "https://static.tibia.com/images/library/norcferatudworc.gif",
       "hitpoints": 8900,
-      "experience_points": 8930,
+      "experience_points": 7680,
       "strong": [
         "death",
         "earth",
@@ -5850,7 +5850,7 @@
       "race": "batface",
       "image_url": "https://static.tibia.com/images/library/batface.gif",
       "hitpoints": 8700,
-      "experience_points": 8770,
+      "experience_points": 7550,
       "strong": [
         "death"
       ],
@@ -10742,7 +10742,7 @@
       "race": "norcferatuorclops",
       "image_url": "https://static.tibia.com/images/library/norcferatuorclops.gif",
       "hitpoints": 10300,
-      "experience_points": 10250,
+      "experience_points": 8820,
       "strong": [
         "death",
         "physical"
@@ -14390,7 +14390,7 @@
       "race": "truedawnfire",
       "image_url": "https://static.tibia.com/images/library/truedawnfire.gif",
       "hitpoints": 8500,
-      "experience_points": 7475,
+      "experience_points": 8100,
       "strong": [
         "death"
       ],
@@ -14415,7 +14415,7 @@
       "race": "feverbloomasura",
       "image_url": "https://static.tibia.com/images/library/feverbloomasura.gif",
       "hitpoints": 8600,
-      "experience_points": 7850,
+      "experience_points": 8600,
       "strong": [
         "earth"
       ],
@@ -14465,7 +14465,7 @@
       "race": "truemidnight",
       "image_url": "https://static.tibia.com/images/library/truemidnight.gif",
       "hitpoints": 9000,
-      "experience_points": 7313,
+      "experience_points": 8200,
       "strong": [
         "fire",
         "holy",
